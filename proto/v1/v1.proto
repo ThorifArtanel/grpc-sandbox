@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package ssb.v1;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./v1";
+
+message User {
+  string id = 1;
+  string firstname = 2;
+  string lastname = 3;
+}
+
+message UserGetResponse {
+  repeated User users = 1;
+}
+
+message UserOneRequest {
+  string id = 1;
+}
+
+message UserOneResponse {
+  User user = 1;
+}
+
+message UserInsertRequest {
+  User user = 1;
+}
+
+message UserUpdateRequest {
+  User user = 1;
+}
+
+message UserDeleteRequest {
+  string id = 1;
+}
+
+service UserService {
+  rpc All(google.protobuf.Empty) returns (UserGetResponse) {}
+  rpc One(UserOneRequest) returns (UserOneResponse) {}
+  rpc Insert(UserInsertRequest) returns (google.protobuf.Empty) {}
+  rpc Update(UserUpdateRequest) returns (google.protobuf.Empty) {}
+  rpc Delete(UserDeleteRequest) returns (google.protobuf.Empty) {}
+}
+
+service DuckdbService {
+  rpc ReGenDB(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
