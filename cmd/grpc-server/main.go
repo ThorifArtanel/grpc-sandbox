@@ -10,22 +10,20 @@ import (
 	"syscall"
 	"time"
 
-	"grpc-sandbox/internal/hello"
-
-	hellopb_v1 "grpc-sandbox/gen/proto/hello/v1"
-
+	pbv1 "github.com/ThorifArtanel/grpc-sandbox/gen/proto/v1"
+	servicev1 "github.com/ThorifArtanel/grpc-sandbox/internal/app/service"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
-	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
 
 var (
-	flDev  = flag.Bool("dev", false, "development mode")
-	flPort = "8080"
+	flDev       = flag.Bool("dev", false, "development mode")
+	defaultPort = "8080"
 )
 
 func main() {
@@ -35,18 +33,20 @@ func main() {
 	defer stop()
 
 	// Setup logger
-	// if *flDev {
-	// 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339Nano})
-	// 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	// } else {
-	// 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
-	// }
+	if *flDev {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339Nano})
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+	}
 
 	// Env Lookup
-	port := flPort
+	port := defaultPort
 	envPort, present := os.LookupEnv("PORT")
 	if present {
 		port = envPort
+	} else {
+		log.Warn().Msgf("port not set using default port")
 	}
 
 	wg.Add(1)
@@ -68,15 +68,15 @@ func main() {
 		)
 
 		// // Register your services
-		greeter := hello.NewGreeter()
-		hellopb_v1.RegisterHelloServiceServer(srv, greeter)
+		pbv1.RegisterUserServiceServer(srv, servicev1.UserSrv())
+		pbv1.RegisterDuckdbServiceServer(srv, servicev1.DDBSrv())
 
 		reflection.Register(srv)
 
 		// Health and reflection service
 		healthServer := health.NewServer()
-		healthServer.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
-		healthServer.SetServingStatus(hellopb_v1.HelloService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
+		healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+		healthServer.SetServingStatus(pbv1.UserService_ServiceDesc.ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
 		grpc_health_v1.RegisterHealthServer(srv, healthServer)
 
 		wg.Done()

@@ -4,6 +4,7 @@ go 1.22.6
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
+	github.com/lib/pq v1.10.9
 	github.com/rs/zerolog v1.33.0
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.1
